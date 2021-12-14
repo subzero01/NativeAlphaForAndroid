@@ -335,7 +335,7 @@ public class ShortcutDialogFragment extends DialogFragment  {
 
                 applyNewBitmapToDialog();
                 setShortcutTitle(webappdata[Const.RESULT_IDX_TITLE]);
-                applyNewBaseUrl(webappdata[Const.RESULT_IDX_NEW_BASEURL]);
+//                applyNewBaseUrl(webappdata[Const.RESULT_IDX_NEW_BASEURL]);
 
             });
         });
