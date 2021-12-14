@@ -9,7 +9,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.provider.MediaStore;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
@@ -50,6 +49,8 @@ import java.util.regex.Pattern;
 import static android.app.Activity.RESULT_OK;
 import static com.cylonid.nativealpha.util.Const.CODE_OPEN_FILE;
 
+import timber.log.Timber;
+
 
 public class ShortcutDialogFragment extends DialogFragment  {
 
@@ -78,7 +79,7 @@ public class ShortcutDialogFragment extends DialogFragment  {
         super.onDestroy();
         if (faviconFetcherThread.isAlive()) {
             faviconFetcherThread.interrupt();
-            Log.d("CLEANUP", "Stopped running faviconfetcher");
+            Timber.tag("CLEANUP").d("Stopped running faviconfetcher");
         }
 
     }
@@ -87,6 +88,7 @@ public class ShortcutDialogFragment extends DialogFragment  {
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == CODE_OPEN_FILE && resultCode == RESULT_OK) {
+            assert data != null;
             Uri uri = data.getData();
             try {
                 bitmap = MediaStore.Images.Media.getBitmap(requireActivity().getContentResolver(), uri);
@@ -127,9 +129,9 @@ public class ShortcutDialogFragment extends DialogFragment  {
                 })
                 .create();
 
-        uiTitle = (EditText) view.findViewById(R.id.websiteTitle);
-        uiFavicon = (ImageView) view.findViewById(R.id.favicon);
-        uiProgressBar = (CircularProgressBar) view.findViewById(R.id.circularProgressBar);
+        uiTitle = view.findViewById(R.id.websiteTitle);
+        uiFavicon = view.findViewById(R.id.favicon);
+        uiProgressBar = view.findViewById(R.id.circularProgressBar);
 
         Button btnCustomIcon = view.findViewById(R.id.btnCustomIcon);
         btnCustomIcon.setOnClickListener(v -> {
@@ -157,23 +159,19 @@ public class ShortcutDialogFragment extends DialogFragment  {
         last_webapp_inside_backup = true;
     }
 
-    private Bitmap loadBitmap(String url)  {
-        InputStream inputStream;
-        Bitmap bitmap;
+    private Bitmap loadBitmap(String url) {
         try {
-            inputStream = new java.net.URL(url).openStream();
             URL ulrn = new URL(url);
             HttpURLConnection con = (HttpURLConnection)ulrn.openConnection();
             InputStream is = con.getInputStream();
-            bitmap = BitmapFactory.decodeStream(is);
+            Bitmap bitmap = BitmapFactory.decodeStream(is);
             if (bitmap == null || bitmap.getWidth() < Const.FAVICON_MIN_WIDTH)
                 return null;
-
+            return null;
         } catch (Exception e) {
-            bitmap = null;
             e.printStackTrace();
         }
-        return bitmap;
+        return null;
     }
     private TreeMap<Integer, String> buildIconMap() {
         TreeMap<Integer, String> found_icons = new TreeMap<>();
@@ -330,12 +328,11 @@ public class ShortcutDialogFragment extends DialogFragment  {
 
         faviconFetcherThread = new Thread(() -> {
             String[] webappdata = fetchWebappData();
-            bitmap = loadBitmap(webappdata[Const.RESULT_IDX_FAVICON]);
+            this.bitmap = loadBitmap(webappdata[Const.RESULT_IDX_FAVICON]);
             requireActivity().runOnUiThread(()-> {
 
                 applyNewBitmapToDialog();
                 setShortcutTitle(webappdata[Const.RESULT_IDX_TITLE]);
-//                applyNewBaseUrl(webappdata[Const.RESULT_IDX_NEW_BASEURL]);
 
             });
         });
